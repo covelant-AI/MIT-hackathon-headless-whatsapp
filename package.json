@@ -7,7 +7,8 @@
     "start": "node .",
     "dev": "nodemon src/main.js",
     "monitor": "node src/monitor.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "qr": "node src/qr_code.js"    
   },
   "dependencies": {
     "express": "^5.1.0",

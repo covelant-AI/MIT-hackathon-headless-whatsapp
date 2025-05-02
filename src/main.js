@@ -1,6 +1,5 @@
 const express = require('express');
 const { Client } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
 const db = require('./db');
 const app = express();
 const port = 3000;
