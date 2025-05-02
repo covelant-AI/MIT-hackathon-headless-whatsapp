@@ -1,5 +1,6 @@
 const express = require('express');
-const { Client } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 const db = require('./db');
 const app = express();
 const port = 3000;
@@ -9,25 +10,44 @@ const clients = new Map();
 
 app.use(express.json());
 
-// Route to create a new user connection
-app.post('/user/new', async (req, res) => {
-    const userId = Date.now().toString(); // Generate unique user ID
-    const client = new Client();
-    
-    // Store the client
+// Function to create a new client with session persistence
+function createClient(userId) {
+    return new Client({
+        authStrategy: new LocalAuth({
+            clientId: userId,
+            dataPath: '.wwebjs_cache'
+        }),
+        puppeteer: {
+            args: ['--no-sandbox']
+        }
+    });
+}
+
+// Function to initialize a client
+async function initializeClient(userId) {
+    const client = createClient(userId);
     clients.set(userId, client);
-    
+
     // Handle QR code generation
     client.on('qr', async (qr) => {
         try {
-            // Store QR code in database
             await db.upsertUser(userId, qr);
             qrcode.generate(qr, { small: true });
-            res.json({ userId, qr });
         } catch (error) {
             console.error('Error storing QR code:', error);
-            res.status(500).json({ error: 'Failed to store QR code' });
         }
+    });
+
+    // Handle authentication success
+    client.on('authenticated', async () => {
+        console.log(`User ${userId} authenticated successfully`);
+        await db.upsertUser(userId, 'AUTHENTICATED');
+    });
+
+    // Handle ready state
+    client.on('ready', async () => {
+        console.log(`Client ${userId} is ready!`);
+        await db.upsertUser(userId, 'READY');
     });
     
     // Handle messages for this specific client
@@ -35,16 +55,41 @@ app.post('/user/new', async (req, res) => {
         try {
             const messageText = message.body || JSON.stringify(message);
             console.log(`[User ${userId}] New message:`, messageText);
-            
-            // Store message in database
             await db.insertMessage(userId, messageText);
         } catch (error) {
             console.error('Error storing message:', error);
         }
     });
-    
+
     // Initialize the client
     client.initialize();
+}
+
+// Restore existing clients on server start
+async function restoreClients() {
+    try {
+        const users = await db.getAllUsers();
+        console.log(`Found ${users.length} existing users, restoring sessions...`);
+        
+        for (const user of users) {
+            console.log(`Restoring session for user ${user.id}`);
+            await initializeClient(user.id);
+        }
+    } catch (error) {
+        console.error('Error restoring clients:', error);
+    }
+}
+
+// Route to create a new user connection
+app.post('/user/new', async (req, res) => {
+    const userId = Date.now().toString();
+    try {
+        await initializeClient(userId);
+        res.json({ userId });
+    } catch (error) {
+        console.error('Error creating new user:', error);
+        res.status(500).json({ error: 'Failed to create new user' });
+    }
 });
 
 // Route to get all users
@@ -69,11 +114,56 @@ app.get('/users/:userId/messages', async (req, res) => {
     }
 });
 
+// Route to check session status
+app.get('/users/:userId/status', async (req, res) => {
+    const userId = req.params.userId;
+    const client = clients.get(userId);
+    
+    if (!client) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+    
+    try {
+        const state = await client.getState();
+        res.json({ status: state });
+    } catch (error) {
+        console.error('Error getting client state:', error);
+        res.status(500).json({ error: 'Failed to get client state' });
+    }
+});
+
+// Route to get all messages with user info
+app.get('/messages/all', async (req, res) => {
+    try {
+        const users = await db.getAllUsers();
+        const allMessages = [];
+        
+        for (const user of users) {
+            const messages = await db.getUserMessages(user.id);
+            allMessages.push({
+                userId: user.id,
+                lastMessageAt: user.lastMessageAt,
+                messages: messages.map(msg => ({
+                    id: msg.id,
+                    message: msg.message,
+                    createdAt: msg.createdAt
+                }))
+            });
+        }
+        
+        res.json(allMessages);
+    } catch (error) {
+        console.error('Error fetching all messages:', error);
+        res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+});
+
 app.get('/', (req, res) => {
     res.send('Hello World');
 });
 
-// Start the server
-app.listen(port, '0.0.0.0', () => {
+// Start the server and restore clients
+app.listen(port, '0.0.0.0', async () => {
     console.log(`Server is running on port ${port}`);
+    await restoreClients();
 });
