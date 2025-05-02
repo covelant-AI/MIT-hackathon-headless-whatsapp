@@ -1,15 +1,17 @@
-const express = require('express');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
-const db = require('./db');
+import express from 'express';
+import pkg from 'whatsapp-web.js';
+const { Client, LocalAuth } = pkg;
+import qrcode from 'qrcode-terminal';
+import db from './db.js';
+import scamDetectionRouter from './scam-detection.js';  
+
 const app = express();
 const port = 3000;
-
 // Store active clients
 const clients = new Map();
 
 app.use(express.json());
-
+app.use('/scam', scamDetectionRouter);
 // Function to create a new client with session persistence
 function createClient(userId) {
     return new Client({
@@ -54,7 +56,7 @@ async function initializeClient(userId) {
     client.on('message_create', async message => {
         try {
             const messageText = message.body || JSON.stringify(message);
-            console.log(`[User ${userId}] New message:`, messageText);
+            // console.log(`[User ${userId}] New message:`, messageText);
             await db.insertMessage(userId, messageText);
         } catch (error) {
             console.error('Error storing message:', error);

@@ -8,20 +8,21 @@
     "dev": "nodemon src/main.js",
     "monitor": "node src/monitor.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "qr": "node src/qr_code.js"    
+    "qr": "node src/qr_code.js"
   },
   "dependencies": {
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
     "playwright": "^1.40.0",
     "playwright-core": "^1.40.0",
     "puppeteer": "^24.8.0",
     "puppeteer-core": "^24.8.0",
     "qrcode": "^1.5.3",
     "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.23.0",
     "sequelize": "^6.37.1",
-    "pg": "^8.11.3",
-    "pg-hstore": "^2.3.4"
+    "whatsapp-web.js": "^1.23.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
