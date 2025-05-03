@@ -49,39 +49,53 @@ const checkScamUrl = async (url) => {
     return data.matches ? data.matches.length > 0 : false;
 };
 
+// Function to process scam detection
+const processScamDetection = async (message) => {
+    // Check for scam URLs
+    const isScamUrl = await checkUrl(message);
+    if (isScamUrl) {
+        return {
+            status: 400,
+            response: { error: 'Scam message detected' }
+        };
+    }
+    
+    // Translate the message
+    const { translation, originalLanguage } = await doTranslation(message);
+    
+    // Check if the message is a scam
+    let { classification, scamExplanation } = await checkScamMessage(translation);
+
+    if (classification === "safe") {
+        return {
+            status: 200,
+            response: { message: 'Message is not a scam' }
+        };
+    }
+
+    if (originalLanguage !== 'en') {
+        const { translation: t } = await doTranslation(scamExplanation, originalLanguage);
+        scamExplanation = t;
+    }
+
+    const audioBuffer = await doTextToSpeech(scamExplanation, originalLanguage);
+
+    return {
+        status: 400,
+        response: { 
+            classification, 
+            explanation: scamExplanation,
+            audioBuffer
+        }
+    };
+};
+
 export default router;
 router.post('/', async (req, res) => {
     try {
         const { message } = req.body;
-        
-        // Check for scam URLs
-        const isScamUrl = await checkUrl(message);
-        if (isScamUrl) {
-            return res.status(400).json({ error: 'Scam message detected' });
-        }
-        
-        // Translate the message
-        const { translation, originalLanguage } = await doTranslation(message);
-        
-        // Check if the message is a scam
-        let { classification, scamExplanation } = await checkScamMessage(translation);
-
-        if (classification === "safe") {
-            return res.status(200).json({ message: 'Message is not a scam' });
-        }
-
-        if (originalLanguage !== 'en') {
-            const { translation: t } = await doTranslation(scamExplanation, originalLanguage);
-            scamExplanation = t;
-        }
-
-        const audioBuffer = await doTextToSpeech(scamExplanation, originalLanguage);
-
-        return res.status(400).json({ 
-            classification, 
-            explanation: scamExplanation,
-            audioBuffer
-        });
+        const result = await processScamDetection(message);
+        return res.status(result.status).json(result.response);
     } catch (error) {
         res.status(500).json({ 
             error: 'Scam detection failed', 
