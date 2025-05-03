@@ -15,28 +15,20 @@ const explainScam = async (message, classification) => {
     return response.text;
 }
 
-const checkScamMessage = async (req, res, next) => {
-    try {
-
-        const { message } = req.body;
-
-        if (!message) {
-            return res.status(400).json({ error: 'Message is required' });
-        }
-
-        //TODO get classification from Flask server
-        const classification = "scam";
-        req.classification = classification;
-
-        if (classification === "scam" || classification === "suspicious") {
-            const explanation = await explainScam(message, classification);
-            req.scamExplanation = explanation;
-        }
-        next();
-    } catch (error) {
-        console.error('Error in checkScamMessage middleware:', error);
-        res.status(500).json({ error: 'Failed to analyze message' });
+const checkScamMessage = async (message) => {
+    if (!message) {
+        throw new Error('Message is required');
     }
+
+    //TODO get classification from Flask server
+    const classification = "scam";
+    
+    if (classification === "scam" || classification === "suspicious") {
+        const explanation = await explainScam(message, classification);
+        return { classification, scamExplanation: explanation };
+    }
+    
+    return { classification: "safe" };
 };
 
 export { checkScamMessage };

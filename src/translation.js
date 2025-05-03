@@ -25,32 +25,26 @@ async function translateText(text, targetLanguage) {
     }
 }
 
-// Translation middleware
-const doTranslation = async (req, res, next) => {
-    try {
-        const { message } = req.body;
-        
-        if (!message) {
-            return res.status(400).json({ 
-                error: 'Missing required field: message' 
-            });
-        }
+// Translation function
+const doTranslation = async (message, targetLanguage = 'en') => {
+    if (!message) {
+        throw new Error('Missing required field: message');
+    }
+    return await translateText(message, targetLanguage);
+};
 
-        const targetLanguage = 'en';
-        const translation = await translateText(message, targetLanguage);
-        req.translation = translation;
-        next();
+// Translation endpoint
+router.post('/', async (req, res) => {
+    try {
+        const { message, targetLanguage } = req.body;
+        const translation = await doTranslation(message, targetLanguage);
+        res.json({ translation });
     } catch (error) {
         res.status(500).json({ 
             error: 'Translation failed', 
             details: error.message 
         });
     }
-};
-
-// Translation endpoint
-router.post('/', doTranslation, (req, res) => {
-    res.json({ translation: req.translation });
 });
 
 module.exports = {

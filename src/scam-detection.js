@@ -2,10 +2,9 @@ import express from 'express';
 const router = express.Router();
 import { doTranslation } from './translation.js';
 import { checkScamMessage } from './gemini.js';
-//create middleware to check if a message is a scam
-const checkUrl = async (req, res, next) => {
-    const { message } = req.body;
-    
+
+// Function to check if a message contains a scam URL
+const checkUrl = async (message) => {
     //check if there is a url in message
     const urlRegex = /(?:https?:\/\/)?(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
     const url = message.match(urlRegex);
@@ -13,13 +12,11 @@ const checkUrl = async (req, res, next) => {
         //check if the url is a scam
         const scamUrl = await checkScamUrl(url[0]);
         if (scamUrl) {
-            res.status(400).json({ error: 'Scam message detected' });
+            return true;
         }
     }
-    next();
+    return false;
 };
-
-
 
 // checkScamUrl makes call to GOOGLE sage browsing api to check if a url is a scam
 const checkScamUrl = async (url) => {
@@ -54,9 +51,34 @@ const checkScamUrl = async (url) => {
 
 export default router;
 //TODO add translation back in
-router.post('/', checkUrl, doTranslation, checkScamMessage, (req, res) => {
-    if (req.classification === "scam" || req.classification === "suspicious") {
-        res.status(400).json({ classification: req.classification, explanation: req.scamExplanation });
+router.post('/', async (req, res) => {
+    try {
+        const { message } = req.body;
+        
+        // Check for scam URLs
+        const isScamUrl = await checkUrl(message);
+        if (isScamUrl) {
+            return res.status(400).json({ error: 'Scam message detected' });
+        }
+        
+        // Translate the message
+        const translation = await doTranslation(message);
+        
+        // Check if the message is a scam
+        const { classification, scamExplanation } = await checkScamMessage(translation);
+
+        if (classification === "scam" || classification === "suspicious") {
+            return res.status(400).json({ 
+                classification, 
+                explanation: scamExplanation 
+            });
+        }
+
+        res.status(200).json({ message: 'Message is not a scam' });
+    } catch (error) {
+        res.status(500).json({ 
+            error: 'Scam detection failed', 
+            details: error.message 
+        });
     }
-    res.status(200).json({ message: 'Message is not a scam' });
 });
