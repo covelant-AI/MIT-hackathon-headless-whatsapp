@@ -55,9 +55,9 @@ async function initializeClient(userId) {
     // Handle messages for this specific client
     client.on('message_create', async message => {
         try {
-            const messageText = message.body || JSON.stringify(message);
-            // console.log(`[User ${userId}] New message:`, messageText);
-            await db.insertMessage(userId, messageText);
+            // Store the entire message object as a JSON string
+            const messageJson = JSON.stringify(message);
+            await db.insertMessage(userId, messageJson);
         } catch (error) {
             console.error('Error storing message:', error);
         }
