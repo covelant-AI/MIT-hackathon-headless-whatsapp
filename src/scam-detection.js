@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import { doTranslation } from './translation.js';
 import { checkScamMessage } from './gemini.js';
-
+import { doTextToSpeech } from './text-2-speach.js';
 // Function to check if a message contains a scam URL
 const checkUrl = async (message) => {
     //check if there is a url in message
@@ -50,7 +50,6 @@ const checkScamUrl = async (url) => {
 };
 
 export default router;
-//TODO add translation back in
 router.post('/', async (req, res) => {
     try {
         const { message } = req.body;
@@ -62,19 +61,27 @@ router.post('/', async (req, res) => {
         }
         
         // Translate the message
-        const translation = await doTranslation(message);
+        const { translation, originalLanguage } = await doTranslation(message);
         
         // Check if the message is a scam
-        const { classification, scamExplanation } = await checkScamMessage(translation);
+        let { classification, scamExplanation } = await checkScamMessage(translation);
 
-        if (classification === "scam" || classification === "suspicious") {
-            return res.status(400).json({ 
-                classification, 
-                explanation: scamExplanation 
-            });
+        if (classification === "safe") {
+            return res.status(200).json({ message: 'Message is not a scam' });
         }
 
-        res.status(200).json({ message: 'Message is not a scam' });
+        if (originalLanguage !== 'en') {
+            const { translation: t } = await doTranslation(scamExplanation, originalLanguage);
+            scamExplanation = t;
+        }
+
+        const audioBuffer = await doTextToSpeech(scamExplanation, originalLanguage);
+
+        return res.status(400).json({ 
+            classification, 
+            explanation: scamExplanation,
+            audioBuffer
+        });
     } catch (error) {
         res.status(500).json({ 
             error: 'Scam detection failed', 

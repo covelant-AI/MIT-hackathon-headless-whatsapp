@@ -34,32 +34,32 @@ async function convertTextToSpeech(text, languageCode = 'en-US') {
     }
 }
 
-// Text-to-speech middleware
-const doTextToSpeech = async (req, res, next) => {
+/**
+ * Convert text to speech
+ * @param {string} text - Text to convert to speech
+ * @param {string} languageCode - Language code (e.g., 'en-US')
+ * @returns {Promise<Buffer>} - Audio buffer
+ */
+const doTextToSpeech = async (text, languageCode = 'en-US') => {
+    if (!text) {
+        throw new Error('Missing required field: text');
+    }
+    return await convertTextToSpeech(text, languageCode);
+};
+
+// Text-to-speech endpoint
+router.post('/', async (req, res) => {
     try {
         const { text, languageCode } = req.body;
-        
-        if (!text) {
-            return res.status(400).json({ 
-                error: 'Missing required field: text' 
-            });
-        }
-
-        const audioBuffer = await convertTextToSpeech(text, languageCode);
-        req.audioBuffer = audioBuffer;
-        next();
+        const audioBuffer = await doTextToSpeech(text, languageCode);
+        res.set('Content-Type', 'audio/mpeg');
+        res.send(audioBuffer);
     } catch (error) {
         res.status(500).json({ 
             error: 'Text-to-speech conversion failed', 
             details: error.message 
         });
     }
-};
-
-// Text-to-speech endpoint
-router.post('/', doTextToSpeech, (req, res) => {
-    res.set('Content-Type', 'audio/mpeg');
-    res.send(req.audioBuffer);
 });
 
 export {
