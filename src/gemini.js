@@ -20,10 +20,21 @@ const checkScamMessage = async (message) => {
         throw new Error('Message is required');
     }
 
-    //TODO get classification from Flask server
-    const classification = "scam";
+    const response = await fetch(process.env.AI_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input_text: message })
+    });
+
+    if (!response.ok) {
+        throw new Error(`AI endpoint request failed with status ${response.status}`);
+    }
+
+    const { classification } = await response.json();
     
-    if (classification === "scam" || classification === "suspicious") {
+    if (classification === "SCAM" || classification === "SUSPICIOUS") {
         const explanation = await explainScam(message, classification);
         return { classification, scamExplanation: explanation };
     }

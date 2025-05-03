@@ -66,7 +66,7 @@ const processScamDetection = async (message) => {
     // Check if the message is a scam
     let { classification, scamExplanation } = await checkScamMessage(translation);
 
-    if (classification === "safe") {
+    if (classification === "SAFE") {
         return {
             status: 200,
             response: { message: 'Message is not a scam' }

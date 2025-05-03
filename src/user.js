@@ -3,7 +3,6 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import db from './db.js';
-import path from 'path';
 
 const router = express.Router();
 
