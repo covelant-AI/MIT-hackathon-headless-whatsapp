@@ -3,6 +3,7 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import db from './db.js';
+import path from 'path';
 
 const router = express.Router();
 
@@ -154,6 +155,29 @@ router.get('/:userId/messages', async (req, res) => {
     } catch (error) {
         console.error('Error fetching messages:', error);
         res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+});
+
+
+router.get('/:userId/qr', async (req, res) => {
+    const user = await db.getUser(req.params.userId);
+    res.json({ qr: user.qrCode });
+});
+
+router.get('/:userId/qr/view', async (req, res) => {
+    try {
+        const user = await db.getUser(req.params.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        if (!user.qrCode) {
+            return res.status(404).json({ error: 'No QR code available for this user' });
+        }
+        // Redirect to the HTML file with the QR code data as a URL parameter
+        res.redirect(`/users/${req.params.userId}/qr/qr.html?data=${encodeURIComponent(user.qrCode)}`);
+    } catch (error) {
+        console.error('Error serving QR view:', error);
+        res.status(500).json({ error: 'Failed to serve QR view' });
     }
 });
 

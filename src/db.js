@@ -16,6 +16,11 @@ async function initDatabase() {
     }
 }
 
+// Get user
+async function getUser(userId) {
+    return await User.findOne({ where: { id: userId } });
+}
+
 // Insert or update user
 async function upsertUser(userId, qrCode) {
     return await User.upsert({
@@ -60,5 +65,6 @@ module.exports = {
     upsertUser,
     insertMessage,
     getAllUsers,
-    getUserMessages
+    getUserMessages,
+    getUser
 }; 
