@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import { doTranslation } from './translation.js';
-
+import { checkScamMessage } from './gemini.js';
 //create middleware to check if a message is a scam
 const checkUrl = async (req, res, next) => {
     const { message } = req.body;
@@ -53,12 +53,10 @@ const checkScamUrl = async (url) => {
 };
 
 export default router;
-
-
-router.post('/', checkUrl, doTranslation, (req, res) => {
-    const { message } = req.body;
-    
-    
-    // TODO: url is not a scam, send the whole message to Flask Server
+//TODO add translation back in
+router.post('/', checkUrl, doTranslation, checkScamMessage, (req, res) => {
+    if (req.classification === "scam" || req.classification === "suspicious") {
+        res.status(400).json({ classification: req.classification, explanation: req.scamExplanation });
+    }
     res.status(200).json({ message: 'Message is not a scam' });
 });

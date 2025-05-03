@@ -9,8 +9,8 @@ const translate = new Translate({
 
 /**
  * Simple translation function
- * @param {string} text - Text to translate
- * @param {string} targetLanguage - Target language code (e.g., 'ru', 'es', 'fr')
+ * @param {string} text
+ * @param {string} targetLanguage 
  */
 async function translateText(text, targetLanguage) {
     try {

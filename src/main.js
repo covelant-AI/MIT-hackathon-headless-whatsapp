@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import scamDetectionRouter from './scam-detection.js';  
 import { router as translationRouter } from './translation.js';

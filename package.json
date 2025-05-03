@@ -11,6 +11,8 @@
     "qr": "node src/qr_code.js"
   },
   "dependencies": {
+    "@google-cloud/translate": "^9.0.1",
+    "@google/genai": "^0.12.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "pg": "^8.11.3",
