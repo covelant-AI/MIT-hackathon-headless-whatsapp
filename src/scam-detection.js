@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-
+import { doTranslation } from './translation.js';
 
 //create middleware to check if a message is a scam
 const checkUrl = async (req, res, next) => {
@@ -55,7 +55,7 @@ const checkScamUrl = async (url) => {
 export default router;
 
 
-router.post('/', checkUrl, (req, res) => {
+router.post('/', checkUrl, doTranslation, (req, res) => {
     const { message } = req.body;
     
     

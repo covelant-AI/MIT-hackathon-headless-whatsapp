@@ -4,6 +4,7 @@ const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import db from './db.js';
 import scamDetectionRouter from './scam-detection.js';  
+import { router as translationRouter} from './translation.js';
 
 const app = express();
 const port = 3000;
@@ -12,6 +13,7 @@ const clients = new Map();
 
 app.use(express.json());
 app.use('/scam', scamDetectionRouter);
+app.use('/translate', translationRouter);
 // Function to create a new client with session persistence
 function createClient(userId) {
     return new Client({
