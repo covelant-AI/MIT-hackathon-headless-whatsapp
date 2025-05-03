@@ -1,18 +1,27 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import scamDetectionRouter from './scam-detection.js';  
 import { router as translationRouter } from './translation.js';
 import { router as userRouter, restoreClients } from './user.js';
+import { router as textToSpeechRouter } from './text-2-speach.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { router as textToSpeechRouter } from './text-2-speach.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
 
+// Enable CORS for all routes
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
+// TODO: REMOVE ALL ROUTERS BEFORE DEPLOYMENT
 app.use('/scam', scamDetectionRouter);
 app.use('/translate', translationRouter);
 app.use('/users', userRouter);

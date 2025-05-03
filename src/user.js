@@ -39,7 +39,6 @@ async function initializeClient(userId) {
 
     // Handle authentication success
     client.on('authenticated', async () => {
-        console.log(`User ${userId} authenticated successfully`);
         await db.upsertUser(userId, 'AUTHENTICATED');
     });
 
@@ -53,8 +52,10 @@ async function initializeClient(userId) {
     client.on('message_create', async message => {
         try {
             // Store the entire message object as a JSON string
-            const messageJson = JSON.stringify(message);
-            await db.insertMessage(userId, messageJson);
+            // const messageJson = JSON.stringify(message);
+            // await db.insertMessage(userId, messageJson); #DONT INSERT MESSAGES INTO DATABASE
+            
+            //TODO Notification Logic
         } catch (error) {
             console.error('Error storing message:', error);
         }
@@ -68,10 +69,8 @@ async function initializeClient(userId) {
 export async function restoreClients() {
     try {
         const users = await db.getAllUsers();
-        console.log(`Found ${users.length} existing users, restoring sessions...`);
         
         for (const user of users) {
-            console.log(`Restoring session for user ${user.id}`);
             await initializeClient(user.id);
         }
     } catch (error) {
@@ -102,31 +101,31 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Route to get all messages with user info
-router.get('/messages/all', async (req, res) => {
-    try {
-        const users = await db.getAllUsers();
-        const allMessages = [];
+// // Route to get all messages with user info
+// router.get('/messages/all', async (req, res) => {
+//     try {
+//         const users = await db.getAllUsers();
+//         const allMessages = [];
         
-        for (const user of users) {
-            const messages = await db.getUserMessages(user.id);
-            allMessages.push({
-                userId: user.id,
-                lastMessageAt: user.lastMessageAt,
-                messages: messages.map(msg => ({
-                    id: msg.id,
-                    message: msg.message,
-                    createdAt: msg.createdAt
-                }))
-            });
-        }
+//         for (const user of users) {
+//             const messages = await db.getUserMessages(user.id);
+//             allMessages.push({
+//                 userId: user.id,
+//                 lastMessageAt: user.lastMessageAt,
+//                 messages: messages.map(msg => ({
+//                     id: msg.id,
+//                     message: msg.message,
+//                     createdAt: msg.createdAt
+//                 }))
+//             });
+//         }
         
-        res.json(allMessages);
-    } catch (error) {
-        console.error('Error fetching all messages:', error);
-        res.status(500).json({ error: 'Failed to fetch messages' });
-    }
-});
+//         res.json(allMessages);
+//     } catch (error) {
+//         console.error('Error fetching all messages:', error);
+//         res.status(500).json({ error: 'Failed to fetch messages' });
+//     }
+// });
 
 // Route to check session status
 router.get('/:userId/status', async (req, res) => {
@@ -146,22 +145,22 @@ router.get('/:userId/status', async (req, res) => {
     }
 });
 
-// Route to get messages for a specific user
-router.get('/:userId/messages', async (req, res) => {
-    try {
-        const messages = await db.getUserMessages(req.params.userId);
-        res.json(messages);
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-        res.status(500).json({ error: 'Failed to fetch messages' });
-    }
-});
+// // Route to get messages for a specific user
+// router.get('/:userId/messages', async (req, res) => {
+//     try {
+//         const messages = await db.getUserMessages(req.params.userId);
+//         res.json(messages);
+//     } catch (error) {
+//         console.error('Error fetching messages:', error);
+//         res.status(500).json({ error: 'Failed to fetch messages' });
+//     }
+// });
 
 
-router.get('/:userId/qr', async (req, res) => {
-    const user = await db.getUser(req.params.userId);
-    res.json({ qr: user.qrCode });
-});
+// router.get('/:userId/qr', async (req, res) => {
+//     const user = await db.getUser(req.params.userId);
+//     res.json({ qr: user.qrCode });
+// });
 
 router.get('/:userId/qr/view', async (req, res) => {
     try {
