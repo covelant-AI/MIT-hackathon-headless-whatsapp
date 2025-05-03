@@ -5,7 +5,7 @@ import { router as translationRouter } from './translation.js';
 import { router as userRouter, restoreClients } from './user.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import { router as textToSpeechRouter } from './text-2-speach.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,6 +17,7 @@ app.use('/scam', scamDetectionRouter);
 app.use('/translate', translationRouter);
 app.use('/users', userRouter);
 app.use('/users/:userId/qr', express.static(path.join(__dirname, 'views')));
+app.use('/text-2-speech', textToSpeechRouter);
 
 app.get('/', (req, res) => {
     res.send('Hello World');

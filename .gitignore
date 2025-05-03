@@ -1,3 +1,4 @@
 node_modules
 .wwebjs_cache
 .env
+google-service-account-key.json
